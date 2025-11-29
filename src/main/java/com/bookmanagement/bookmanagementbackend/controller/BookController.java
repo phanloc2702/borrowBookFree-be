@@ -1,17 +1,20 @@
 package com.bookmanagement.bookmanagementbackend.controller;
 
 import com.bookmanagement.bookmanagementbackend.dto.ApiResponse;
+import com.bookmanagement.bookmanagementbackend.dto.request.BookCreationRequest;
+import com.bookmanagement.bookmanagementbackend.dto.request.BookUpdateRequest;
 import com.bookmanagement.bookmanagementbackend.dto.request.FilterBookRequest;
-import com.bookmanagement.bookmanagementbackend.dto.request.FilterUserRequest;
+
 import com.bookmanagement.bookmanagementbackend.dto.response.BookResponse;
-import com.bookmanagement.bookmanagementbackend.dto.response.UserResponse;
-import com.bookmanagement.bookmanagementbackend.entity.Book;
-import com.bookmanagement.bookmanagementbackend.entity.User;
+
 import com.bookmanagement.bookmanagementbackend.service.BookService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.HashMap;
 import java.util.List;
@@ -53,5 +56,29 @@ public class BookController {
     public ResponseEntity<ApiResponse> getBookById(@PathVariable Long id){
         BookResponse book = bookService.getBookById(id);
         return ResponseEntity.ok(new ApiResponse("Thành công", book));
+    }
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse> createBook(
+            @Valid @ModelAttribute BookCreationRequest request,
+            @RequestPart(value = "cover", required = false) MultipartFile cover
+    ) {
+        BookResponse book = bookService.createBook(request, cover);
+        return ResponseEntity.ok(new ApiResponse("Tạo sách thành công", book));
+    }
+
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse> updateBook(
+            @PathVariable Long id,
+            @Valid @ModelAttribute BookUpdateRequest request,
+            @RequestPart(value = "cover", required = false) MultipartFile cover
+    ) {
+        BookResponse book = bookService.updateBook(id, request, cover);
+        return ResponseEntity.ok(new ApiResponse("Cập nhật sách thành công", book));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse> deleteBook(@PathVariable Long id) {
+        bookService.deleteBook(id);
+        return ResponseEntity.ok(new ApiResponse("Xoá sách thành công", null));
     }
 }
