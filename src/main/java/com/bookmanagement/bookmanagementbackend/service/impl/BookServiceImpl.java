@@ -27,7 +27,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-
+import org.springframework.util.StringUtils;
 import java.io.IOException;
 import java.util.List;
 
@@ -69,9 +69,13 @@ public class BookServiceImpl implements BookService {
         book.setQuantity(request.getQuantity());
         book.setAvailableQuantity(request.getQuantity());
         book.setCategory(category);
-
+        String coverUrl = request.getCoverUrl();
         if (cover != null && !cover.isEmpty()) {
-            book.setCoverUrl(storeCoverAndGetUrl(cover));
+            coverUrl = storeCoverAndGetUrl(cover);
+        }
+
+        if (StringUtils.hasText(coverUrl)) {
+            book.setCoverUrl(coverUrl);
         }
 
         Book saved = bookRepository.save(book);
@@ -95,11 +99,18 @@ public class BookServiceImpl implements BookService {
         book.setQuantity(request.getQuantity());
         book.setAvailableQuantity(Math.max(0, request.getQuantity() - borrowed));
         book.setCategory(category);
-
+        String newCoverUrl = book.getCoverUrl();
         if (cover != null && !cover.isEmpty()) {
             String oldCoverUrl = book.getCoverUrl();
-            book.setCoverUrl(storeCoverAndGetUrl(cover));
+            newCoverUrl = storeCoverAndGetUrl(cover);
             deleteCoverFile(oldCoverUrl);
+        }  else if (StringUtils.hasText(request.getCoverUrl()) && !request.getCoverUrl().equals(book.getCoverUrl())) {
+            deleteCoverFile(book.getCoverUrl());
+            newCoverUrl = request.getCoverUrl();
+        }
+
+        if (StringUtils.hasText(newCoverUrl)) {
+            book.setCoverUrl(newCoverUrl);
         }
 
         Book saved = bookRepository.save(book);

@@ -17,7 +17,9 @@ public class UploadController {
     @PostMapping("/upload")
     public ResponseEntity<?> uploadFile(@RequestParam("file") MultipartFile file) {
         try {
-            String fileUrl = fileStorageService.storeFile(file);
+
+            String fileName = fileStorageService.storeFile(file);
+            String fileUrl = fileStorageService.getFileUrl(fileName);
             return ResponseEntity.ok().body(fileUrl);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Upload failed: " + e.getMessage());

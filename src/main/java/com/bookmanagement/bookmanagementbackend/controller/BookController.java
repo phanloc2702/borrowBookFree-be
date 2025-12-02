@@ -60,7 +60,7 @@ public class BookController {
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse> createBook(
             @Valid @ModelAttribute BookCreationRequest request,
-            @RequestPart(value = "cover", required = false) MultipartFile cover
+            @RequestParam(value = "cover", required = false) MultipartFile cover
     ) {
         BookResponse book = bookService.createBook(request, cover);
         return ResponseEntity.ok(new ApiResponse("Tạo sách thành công", book));

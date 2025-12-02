@@ -40,7 +40,7 @@ public class FileStorageServiceImpl implements FileStorageService {
 
     @Override
     public String getFileUrl(String fileName) {
-        return "/uploads/" + fileName;
+        return "uploads/" + fileName;
     }
 
     @Override

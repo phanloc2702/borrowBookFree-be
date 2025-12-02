@@ -23,7 +23,7 @@ public class BookCreationRequest {
     private String isbn;
 
     private String description;
-
+    private String coverUrl;
     @Min(value = 1, message = "Quantity must be at least 1")
     @NotNull(message = "Quantity is required")
     private Integer quantity;
