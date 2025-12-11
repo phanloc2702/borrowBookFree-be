@@ -1,9 +1,12 @@
 package com.bookmanagement.bookmanagementbackend.service.impl;
 
 import com.bookmanagement.bookmanagementbackend.dto.request.AuthenticationRequest;
+import com.bookmanagement.bookmanagementbackend.dto.request.ChangePasswordRequest;
 import com.bookmanagement.bookmanagementbackend.dto.request.IntrospectRequest;
+import com.bookmanagement.bookmanagementbackend.dto.request.RegisterRequest;
 import com.bookmanagement.bookmanagementbackend.dto.response.AuthenticationResponse;
 import com.bookmanagement.bookmanagementbackend.dto.response.IntrospectResponse;
+import com.bookmanagement.bookmanagementbackend.dto.response.UserResponse;
 import com.bookmanagement.bookmanagementbackend.entity.User;
 import com.bookmanagement.bookmanagementbackend.exception.BusinessException;
 import com.bookmanagement.bookmanagementbackend.exception.ErrorCodeConstant;
@@ -38,7 +41,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @NonFinal
     @Value("${jwt.signerKey}")
     private String SIGNER_KEY;
-
+    private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(10);
     public IntrospectResponse introspect(IntrospectRequest request) throws JOSEException, ParseException {
         String token = request.getToken();
         JWSVerifier verifier = new MACVerifier(SIGNER_KEY.getBytes());
@@ -60,9 +63,16 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             throw new BusinessException("Invalid password", ErrorCodeConstant.INVALID_PASSWORD);
         }
         String token = generateToken(request.getEmail());
+        UserResponse userResponse = UserResponse.builder()
+                .id(user.getId())
+                .fullName(user.getFullName())
+                .email(user.getEmail())
+                .role(user.getRole().name())   // tuỳ bạn lưu role kiểu gì
+                .build();
         return AuthenticationResponse.builder()
                 .token(token)
                 .authenticated(true)
+                .user(userResponse)
                 .build();
     }
     private String generateToken(String email) {
@@ -87,5 +97,79 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             throw new RuntimeException(e);
         }
     }
-        // Implement token generation logic (e.g., JWT)
+
+    @Override
+    public AuthenticationResponse register(RegisterRequest request) {
+        // 1. Validate trùng username
+        if (userRepository.existsByUsername(request.getUsername())) {
+            throw new BusinessException("Username already exists", ErrorCodeConstant.USERNAME_ALREADY_EXIST);
+        }
+
+        // 2. Validate trùng email (rất nên làm, vì login dùng email)
+        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+            throw new BusinessException("Email already exists", ErrorCodeConstant.EMAIL_ALREADY_EXIST);
+        }
+
+        // 3. Mã hoá mật khẩu
+        PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(10);
+
+        // 4. Tạo user mới
+        User user = new User();
+        user.setUsername(request.getUsername());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setFullName(request.getFullName());
+        user.setEmail(request.getEmail());
+        user.setRole(User.Role.USER); // default USER, tuỳ bạn
+
+        userRepository.save(user);
+
+        // 5. Tạo JWT sử dụng hàm generateToken(String email) bạn đã viết
+        String token = generateToken(user.getEmail());
+
+        // 6. Build UserResponse giống authenticate()
+        UserResponse userResponse = UserResponse.builder()
+                .id(user.getId())
+                .fullName(user.getFullName())
+                .email(user.getEmail())
+                .role(user.getRole().name())
+                .build();
+
+        // 7. Trả về AuthenticationResponse cùng format với login
+        return AuthenticationResponse.builder()
+                .token(token)
+                .authenticated(true)
+                .user(userResponse)
+                .build();
+    }
+    @Override
+    public void changePassword(ChangePasswordRequest request) {
+        // 1. Tìm user theo email
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new BusinessException(
+                        "Email không tồn tại",
+                        ErrorCodeConstant.USER_NOT_FOUND
+                ));
+
+        // 2. Kiểm tra mật khẩu cũ
+        if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
+            throw new BusinessException(
+                    "Mật khẩu hiện tại không đúng",
+                    ErrorCodeConstant.INVALID_PASSWORD
+            );
+        }
+
+        // 3. Không cho trùng mật khẩu cũ (optional)
+        if (passwordEncoder.matches(request.getNewPassword(), user.getPassword())) {
+            throw new BusinessException(
+                    "Mật khẩu mới phải khác mật khẩu hiện tại",
+                    ErrorCodeConstant.INVALID_REQUEST
+            );
+        }
+
+        // 4. Encode và lưu mật khẩu mới
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+    }
+
+    // Implement token generation logic (e.g., JWT)
 }

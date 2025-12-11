@@ -1,10 +1,7 @@
 package com.bookmanagement.bookmanagementbackend.entity;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -14,6 +11,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
+@Builder
 @Table(name = "borrowings")
 public class Borrowing {
     @Id
@@ -44,7 +42,9 @@ public class Borrowing {
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
-
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "request_id")
+    private BorrowRequest request;
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();

@@ -2,7 +2,9 @@ package com.bookmanagement.bookmanagementbackend.controller;
 
 import com.bookmanagement.bookmanagementbackend.dto.ApiResponse;
 import com.bookmanagement.bookmanagementbackend.dto.request.AuthenticationRequest;
+import com.bookmanagement.bookmanagementbackend.dto.request.ChangePasswordRequest;
 import com.bookmanagement.bookmanagementbackend.dto.request.IntrospectRequest;
+import com.bookmanagement.bookmanagementbackend.dto.request.RegisterRequest;
 import com.bookmanagement.bookmanagementbackend.dto.response.AuthenticationResponse;
 import com.bookmanagement.bookmanagementbackend.dto.response.IntrospectResponse;
 import com.bookmanagement.bookmanagementbackend.service.AuthenticationService;
@@ -31,5 +33,16 @@ public class AuthenticationController {
         IntrospectResponse response = authenticationService.introspect(request);
         return ResponseEntity.ok(new ApiResponse("Login successful", response, null));
     }
-
+    @PostMapping("/register")
+    public ResponseEntity<ApiResponse> register(@RequestBody RegisterRequest request) {
+        AuthenticationResponse response = authenticationService.register(request);
+        return ResponseEntity.ok(new ApiResponse("Register successful", response, null));
+    }
+    @PostMapping("/change-password")
+    public ResponseEntity<?> changePassword(@RequestBody ChangePasswordRequest request) {
+        authenticationService.changePassword(request);
+        return ResponseEntity.ok(
+                new ApiResponse("Đổi mật khẩu thành công", null)
+        );
+    }
 }
